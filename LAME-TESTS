@@ -1,0 +1,331 @@
+These test were done on two machines that
+differ as much as possible in the parformance of all subsystems
+that affect the EPLIP link.
+The best connection could be achieved if both machines run their ISA
+at the same speed. Their CPUs are quite similar in performance and for
+DMA ransfers they are equiped with the same amount of system memmory( both
+have less than 16MB of RAM - or both have more than 16MB of RAM:
+if they have < 16MB it is guarantied that all socket buffers either
+allocated from the EPLIP driver for incoming packets or passed to EPLIP
+transmit routine from the kernel are DMA safe and no COPY to the bounce buffer
+will be required. In the other case both sides almost everytime will need to COPY
+from/to the bounce buffer).
+
+More equivalent the machines are , more optimal are transfers between them over EPLIP,
+and vice versa.
+
+1. Amd-K6-II-450Mhz: ISA Bus running at 8Mhz( 4Mhz on DMA cycles ),256MB RAM,UDMA 33 HDD
+2. Amd486DX4-120Mhz: FSB 40Mhz-ISA Bus runs at 1/3 of the FSB( again the DMA cycles are at half clock rates ), 16MB RAM,
+   Not so Slow HDD but the IDE chipset supports only PIO modes.
+
+Test were done with a 13.5 Megs gzip compressed file. 3 meters Flat Ribbon Cable ( instead of
+recomended shielded TP ) was used, but there were only 2 physical link errors as you'll
+see from the ifconfig statistics.
+
+Some system info for the pentium machine
+
+[root@wolfy /root]# uname -a
+Linux wolfy.whitefang.org 2.4.9 #2 Mon Aug 20 14:05:02 EEST 2001 i586 unknown
+--------------------------------------------------------------------------
+[root@wolfy /root]# cat /proc/cpuinfo
+processor       : 0
+vendor_id       : AuthenticAMD
+cpu family      : 5
+model           : 8
+model name      : AMD-K6(tm) 3D processor
+stepping        : 12
+cpu MHz         : 451.032
+cache size      : 64 KB
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : yes
+cpuid level     : 1
+wp              : yes
+flags           : fpu vme de pse tsc msr mce cx8 pge mmx syscall 3dnow k6_mtrr
+bogomips        : 897.84
+--------------------------------------------------------------------------
+[root@wolfy /root]# free
+             total       used       free     shared    buffers     cached
+Mem:        255808     252736       3072          0       4888     159116
+-/+ buffers/cache:      88732     167076
+Swap:       530072      47356     482716
+[root@wolfy /root]#
+--------------------------------------------------------------------------
+
+ftp> put
+(local-file) big.gz
+(remote-file) /dev/null
+local: big.gz remote: /dev/null
+200 PORT command successful.
+150 Opening BINARY mode data connection for /dev/null.
+226 Transfer complete.
+13625533 bytes sent in 24 seconds (5.5e+02 Kbytes/s)
+ftp> put big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz.
+226 Transfer complete.
+13625533 bytes sent in 37 seconds (3.6e+02 Kbytes/s)
+ftp> get
+(remote-file) big.gz
+(local-file) /dev/null
+local: /dev/null remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 30 seconds (4.4e+02 Kbytes/s)
+ftp> get big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 29 seconds (4.6e+02 Kbytes/s)
+ftp> bye
+221-You have transferred 54502132 bytes in 4 files.
+221-Total traffic for this session was 54503115 bytes in 4 transfers.
+221-Thank you for using the FTP service on X1.whitefang.org.
+221 Goodbye.
+--------------------------------------------------------------------------
+
+Some stats from ifconfig
+
+[root@wolfy /root]# ifconfig eplip0
+eplip0    Link encap:Ethernet  HWaddr FC:FC:C0:A8:00:01
+          inet addr:192.168.0.1  P-t-P:192.168.0.2  Mask:255.255.255.255
+          UP POINTOPOINT RUNNING  MTU:16360  Metric:1
+          RX packets:9995 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:8545 errors:30 dropped:0 overruns:0 carrier:30
+          collisions:0 txqueuelen:10
+          Interrupt:7 Base address:0x378
+
+=======================================================================
+
+Some system info for the Old 486
+
+[root@X1 angel]# uname -a
+Linux X1.whitefang.org 2.4.9 #3 Thu Sep 6 19:12:42 EEST 2001 i486 unknown
+--------------------------------------------------------------------------
+[root@X1 angel]# cat /proc/cpuinfo
+processor       : 0
+vendor_id       : unknown
+cpu family      : 4
+model           : 0
+model name      : 486
+stepping        : unknown
+fdiv_bug        : no
+hlt_bug         : no
+f00f_bug        : no
+coma_bug        : no
+fpu             : yes
+fpu_exception   : no
+cpuid level     : -1
+wp              : yes
+flags           :
+bogomips        : 59.80
+--------------------------------------------------------------------------
+[root@X1 angel]# free
+             total       used       free     shared    buffers     cached
+Mem:         14456      13412       1044          0        200      10384
+-/+ buffers/cache:       2828      11628
+Swap:       136516       2152     134364
+--------------------------------------------------------------------------
+
+FTP transfers
+
+ftp> put
+(local-file) big.gz
+(remote-file) /dev/null
+local: big.gz remote: /dev/null
+200 PORT command successful.
+150 Opening BINARY mode data connection for /dev/null.
+226 Transfer complete.
+13625533 bytes sent in 29 seconds (4.6e+02 Kbytes/s)
+ftp> put big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz.
+226 Transfer complete.
+13625533 bytes sent in 29 seconds (4.6e+02 Kbytes/s)
+ftp> get
+(remote-file) big.gz
+(local-file) /dev/null
+local: /dev/null remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 24 seconds (5.6e+02 Kbytes/s)
+ftp> get big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 36 seconds (3.7e+02 Kbytes/s)
+ftp> get big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 32 seconds (4.1e+02 Kbytes/s)
+ftp> bye
+221-You have transferred 68127665 bytes in 5 files.
+221-Total traffic for this session was 68128792 bytes in 5 transfers.
+221-Thank you for using the FTP service on wolfy.whitefang.org.
+221 Goodbye.
+--------------------------------------------------------------------------
+
+Some stats from ifconfig on the old 486
+
+[root@X1 angel]# ifconfig eplip0
+eplip0    Link encap:Ethernet  HWaddr FC:FC:C0:A8:00:02
+          inet addr:192.168.0.2  P-t-P:192.168.0.1  Mask:255.255.255.255
+          UP POINTOPOINT RUNNING  MTU:16360  Metric:1
+          RX packets:8529 errors:0 dropped:6 overruns:0 frame:2
+          TX packets:9979 errors:1 dropped:0 overruns:0 carrier:1
+          collisions:0 txqueuelen:10
+          Interrupt:7 Base address:0x378
+--------------------------------------------------------------------------
+
+Here are file copy times from/to smb share on the pentium machine over eplip link
+The same 13.5MB file was used for testing
+
+[root@X1 angel]# mount -t smbfs //192.168.0.1/cds /mnt/winf
+Password:
+[root@X1 angel]# time dd if=/mnt/winf/big.gz of=/dev/null bs=4k
+3326+1 records in
+3326+1 records out
+
+real    0m34.477s
+user    0m0.040s
+sys     0m1.310s
+
+This is around 380KB/s
+
+[root@X1 angel]# time dd if=big.gz of=/mnt/winf/big.gz bs=4k
+3326+1 records in
+3326+1 records out
+
+real    0m36.935s
+user    0m0.090s
+sys     0m32.340s
+
+This is around 360KB/s
+
+[root@X1 angel]# time  dd if=/dev/zero of=/mnt/winf/big.gz bs=4k count=3327
+3327+0 records in
+3327+0 records out
+
+real    0m30.040s
+user    0m0.100s
+sys     0m26.950s
+
+This is over 440KB/s
+
+=======================================================================
+Next test were done whith eplip running in mode=0x8 ( DMA sends & receives )
+They show that this mode is slower - but on the "sender" side it is much
+less CPU intensive than the default PIO mode. However the receiver is
+still CPU "killer" ( In the current version -0.4pre1 ).
+=======================================================================
+On the Pentium machine
+
+ftp> put
+(local-file) big.gz
+(remote-file) /dev/null
+local: big.gz remote: /dev/null
+200 PORT command successful.
+150 Opening BINARY mode data connection for /dev/null.
+226 Transfer complete.
+13625533 bytes sent in 40 seconds (3.3e+02 Kbytes/s)
+ftp> put big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz.
+226 Transfer complete.
+13625533 bytes sent in 51 seconds (2.6e+02 Kbytes/s)
+ftp> get
+(remote-file) big.gz
+(local-file) /dev/null
+local: /dev/null remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 54 seconds (2.5e+02 Kbytes/s)
+ftp> get big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 45 seconds (2.9e+02 Kbytes/s)
+
+=======================================================================
+On the old 486
+
+ftp> get
+(remote-file) big.gz
+(local-file) /dev/null
+local: /dev/null remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 40 seconds (3.3e+02 Kbytes/s)
+ftp> get big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz (13625533 bytes).
+226 Transfer complete.
+13625533 bytes received in 51 seconds (2.6e+02 Kbytes/s)
+ftp> put
+(local-file) big.gz
+(remote-file) /dev/null
+local: big.gz remote: /dev/null
+200 PORT command successful.
+150 Opening BINARY mode data connection for /dev/null.
+226 Transfer complete.
+13625533 bytes sent in 48 seconds (2.8e+02 Kbytes/s)
+ftp> put big.gz
+local: big.gz remote: big.gz
+200 PORT command successful.
+150 Opening BINARY mode data connection for big.gz.
+226 Transfer complete.
+13625533 bytes sent in 47 seconds (2.8e+02 Kbytes/s)
+ftp> bye
+221-You have transferred 54502132 bytes in 4 files.
+221-Total traffic for this session was 54503106 bytes in 4 transfers.
+221-Thank you for using the FTP service on wolfy.whitefang.org.
+221 Goodbye.
+--------------------------------------------------------------------------
+
+And the smb transfers on the 486 and smbd running ot the pentium
+
+[root@X1 angel]# time dd if=/mnt/winf/big.gz of=/dev/null bs=4k
+3326+1 records in
+3326+1 records out
+
+real    0m47.751s
+user    0m0.080s
+sys     0m5.560s
+
+Around 280KB/s
+
+[root@X1 angel]# time dd if=big.gz of=/mnt/winf/big.gz bs=4k
+3326+1 records in
+3326+1 records out
+
+real    1m15.288s
+user    0m0.100s
+sys     0m11.780s
+
+Less than 180 KB/s
+
+[root@X1 angel]# time dd if=/dev/zero of=/mnt/winf/big.gz bs=4k count=3327
+3327+0 records in
+3327+0 records out
+
+real    1m7.046s
+user    0m0.180s
+sys     0m9.470s
+
+Around 200 KB/s

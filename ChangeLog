@@ -1,0 +1,27 @@
+2002-03-10  root  <root@wolfy.whitefang.org>
+
+	* Changed default opeation mode to EPLIP_MODE_ECP_DMA( if the DMA chan was detected )
+
+2002-03-10  root  <root@wolfy.whitefang.org>
+
+	* Added RedHat-ish /etc/sysconfig/network-scripts/ifcfg-eplip0,ifup-eplip
+
+2002-03-09  root  <root@wolfy.whitefang.org>
+
+	* Makefile changes
+		Added Rules.arch( partially taken from linux/arch/i386/Makefile )
+			Ignore default CFLAGS and set it according to 
+			current kernel config(-march,-mcpu -mrefered-stack-boundary).
+		Make build fail on non-x86 archs or kernel builds not supporting ISA.
+		Fix "install" target not copying eplip.o into the right place on linux-2.2.x				
+		Finaly removed build.sh from the source tree.
+		
+2002-03-08  root  <root@wolfy.whitefang.org>
+
+	* Added MODULE_LICENSE("GPL") to shut the module loader up
+
+2002-03-08  root  <root@wolfy.whitefang.org>
+
+	* Removed depricated include linux/malloc.h
+
+

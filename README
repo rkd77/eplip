@@ -1,0 +1,80 @@
+version 0.5.6           Default operation mode now is ECP FIFO DMA if the dma channel was detected.
+                        No more support for AUTODIN II CRC frame checksumming.
+                        Added new module parameter "hwaddr" which is used to set rightmost
+                        four octets of the ETH MAC address(it's usefull for using eplip with DHCP|BOOTP).
+                        EPLIP is no longer Point to Point and runs with ARP( This was necessary in order to
+                        connect EPLIP to WEPLIP - because NDIS does not allow MEDIA_802_3 and PPP flags on the same device ).
+                        So you should no longer bring the eplipX with ifconfig eplipX xxx.xxx.xxx.xxx Pointopoint xxx.xxx.xxx.xxx up
+                        but rather like a normal ETH net interface.
+version 0.4
+			Added Makefile/Rules.make to build EPLIP driver.
+			Don't use build.sh script anymore, just type "make" to build
+			and "make install" to copy eplip.o into "/lib/modules/$VERSION/kernel/drivers/net" directory
+version 0.4pre1:
+                All written below for eplip-0.3 applies to 0.4pre1. Here I'll list only
+                changes made from 0.3 to 0.4:
+
+
+version 0.3:
+version 0.1:
+This is the first version of Enhanced Parallel Line IP.( 0.1 ).
+It is based on the original PLIP driver, but is intended to run
+on ECP ports using a so called "FAST ECP" cable.( see WIRING in the dist tree).
+On my test machines this scratch gets more than 5 times faster transfers than PLIP.
+( 60-70 KB/s raw transfers with PLIP - 300-400 KB/s EPLIP - Actually I get 30K ftping
+from remote to /dev/null with PLIP and 350-370K with EPLIP )
+
+I.What you need:
+0. The source tarball for eplip -eplip-0.3.tar.gz
+1. "FAST ECP" cable: as described in the file WIRING.( without 1k resistors on data lines)
+2. linux-2.2 or 2.4 kernel sources.
+3. To build the driver issue ./build.sh from within the source directory( You don't have to , and
+    it is __not__ advisable to extract the tarball in the kernel source tree - if gcc complains about includes
+    edit the build.sh file and make sure you include path is set properly by this script )
+    If you C Compiler complains about unrecognized "mpreferred-stack-boundary" option edit the "build.sh" and
+    comment the line:
+    ALIGN_CFLAGS="-mpreferred-stack-boundary="$STK_ALIGN
+
+4.  insmod ./eplip.o io=0x378 ( if you ECP is @ iobase 0x378 - or replace the __io__ param with the appropriate one )
+    You may need to supply the DMA channel( etc. insmod ./eplip.o io=0x378 dma=3 ) if the this is not
+    detected automatically( currently DMA autodetection fails for MIOs integrated in VIA686A South bridge -
+    this was tested and found to not work on an ABIT KT7 ).
+
+5.  if this succeeds and an ECP capable port was detected @ this address you may proceeded with 6
+6.  ifconfig eplip0 xxx.xxx.xxx.xxx. pointopoint xxx.xxx.xxx.xxx up
+    for example : ifconfig eplip0 192.168.1.1 pointpoint 192.168.1.2 up
+    If this succeeds activate eplip0 on the second machine. Make sure you routing is set up properly.
+    and try pinging from 192.168.1.1 the 192.168.2
+7.  If this does not work __read__ the PLIP mini howto in your documentation or if you do not have it
+    look at http://www.linuxdoc.org for it. EPLIP is much like PLIP, but first read this file to the __END__
+    ( there are many limitations in this version ).
+
+
+II.Limitations:
+1. Works only on x86 linux
+2. Does not work for PCI based ECP( or MIOs that have ECP ), or at least will not work if
+   the PnP subsystem has assigned second IOEXTENT Range IO address != IOBASE+0x400.
+   This won't need any fixing when eplip becomes parport-ish.
+3. Does not work for ECPs which have   FIFOs with more than 8bit PWORD.
+   This also will be fixed. If I find a 16/32 bit ECP to test with or if someone fix it :)
+   As of version 0.5.6 this should work if eplip was compiled with EPLIP_16bit_FIFO_SUPPORT
+   ( uncomment MACRODEFS+=EPLIP_16bit_FIFO_SUPPORT in the Makefile ), but it's not tested.
+4. Could not coexist with a parport driver. Make sure you've built your kernel with parport and parport_pc
+   as modules, and you do not have grabbed the port you are going to use with eplip.
+   This will __NEVER__ be fixed. The reason is IEEE1284 handshaking uses Transfer Negotiation That is
+   __good__ for host<-->peripheral device connections, but if eplip follows the IEEE1284 phase transition
+   scheme you'll probably get you port's output latches blown, since the IDLE phase is defined as
+   setting direction to __WRITE__ and output is not tristated.Since the both sides are __not__ peripheral
+   devices, both have to be in REVERSE IDLE state, instead of being in FORWARD IDLE. This violates the IEEE1284 protocol
+   and since a normal implementation of driver supporting  IEEE1284-94 ECP will not allow this, EPLIP
+   uses it's own implementation of ECP driving software.
+   NOTE: It is not impossible to implement a higher level transport protocol based on IEEE1284-94
+   aware parport driver, but this will require asymmetric connection ( Like with the Windows Direct Cable
+   connection - one computer is HOST and the other is GUEST - actually it is not a guest but just
+   behaves like a peripheral device ).
+   The EPLIP approach is symmetric: Both sides behave as a "peripheral" when sending and as a "host"
+   when receiving.
+
+5. Many bugs probably.
+
+Angel Valkov( whitefang.dir.bg)

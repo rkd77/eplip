@@ -1,0 +1,29 @@
+1. Implement device_ioctls to change timeouts, this requires also replacement of constant timeouts in low level rx tx routines.
+2. Remove AUTODIN II CRC ( On the src cleanup ).
+3. Make change_mtu work again with EPLIP_MODE_ECP_DMA
+4. RollBack the changes that caused IRQ_AUTOPROBE to fail on VIA KT133.( It worked on older version - 4.x probably ).
+5. Finally fix the VIA KT133 DMA_AUTOPROBE bug ( or marked it as persistent if it's due to there are not enough pins on the MIO chip )
+6. Cleanup the __non__linear skb checks and resize/relloc copy non 32bit sized skbs.
+7. Verify that IPX works with EPLIP and with as large MTUs as 16K with frame-types other than Ethernet II
+( i.e. IEEE802.3 with and without 802.2 LLC )- if not add a frame-type bit in the EPLIP_HH structure FLAGS field
+( Seriously ,I have no idea how I'll detect the frame type of packets queued for sending with the NDIS miniport :-(  )
+8. Verify that Bridging, Packet Filtering and other stuff works fine with EPLIP with large MTUs.
+9. Add HWADDR module parameter and check that EPLIP works with DHCP, BOOTP and RARP.
+10. Finally fix the error counting for the inet stats.
+11. Fix the VIA KT133 DMA send/receive truncated last( first?) byte bug.( Or this is a permanent hwd bug or my second machine just has two many defects )
+12. Clean up some printk()s, reformat and lindent.
+
+
+Forks:
+1. Fork a parport-ish EPLIP.
+2. Fork a linux-2.5 version.
+3. Rename main.c and fork a kernel-patch version.
+
+WEPLIP:
+1. Make WEPLIP work with ports other than ParallelPort0
+2. Add HWDADDR parameter, and also Registry parsing for TCP/IP parameters
+3. Cleanup printk()s and unnecessary checks in the Parport binding routines.
+4. Fix the XP INVALID_POOL_CALLER on EPLIP going down on the VIA KT133 machine.( Race condition probably on releasing the ParportInterrut )
+5. Remove the AUTODIN II CRC-ing too.
+6. Find a hack that makes it possible to steal resources from the P&P manager
+( so it's possible to steal the DMA channel registered by the Parport driver and make use of it for DMA transfers ).

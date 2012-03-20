@@ -1,0 +1,34 @@
+1. Fix the jiffies used in the call of eplip_schedule_dma_timeout() in eplip_send_packet()
+2. Add one mode operation mode( DMA TX + PIO RX )
+3. Fix the DMA autprobe VIAKT133 Bug
+4. Fix the bounce buffer allocation to try several times if kmalloc(GFP_DMA) failes in eplip_open()
+4. Remove ( skb->len > (dev->mtu+ ETH_HLEN) ) check in eplip_receive_packet() - replaced it with (skb->len < PKT_RCVBUF_SZ)
+   PKT_RCVBUF_SZ = MRU + ETH_HLEN ( choose an acceptable value not bigger than (32K - ETH_HLEN) for MRU )
+5. Implement change_mtu() facility
+6. Fix the PROXYARP not working properly for 'arp -i eplipx'
+7. Implement CPU-free DMA receives.
+8. Replace the { disable_interrupt();synchronize_irq() } in eplip_close()
+   with something that does the same but does not harm other drivers for devices that share
+   the IRQ line with ours( if (dev->flags & ECPDEV_IRQ_TRIGGER) then the line is LEVEL triggered
+   and could be shared.
+
+Changel Planned for version 0.6
+I. Omit Ethernet Headers: This requires:
+   1. Rewrite hard_header(),hard_header_cache() to construct null headers
+   2. Change the eplip_send_hard_header(), eplip_receive_hard_header() so they work
+      with the new EPLIP hard header which probably will be:
+        struct eplip_hh {
+                        __u16 length;
+                        __u16 protocol;
+                        __u32 checksum;
+        }
+
+        eplip_hh.length and eplip_hh.checksum are same as in the current implementation
+
+        eplip_hh.protocol is the Ethernet( or IEEE.802.3 ) protocol type for the packet being transmitted ,
+        as it is in the ethernet header.( for example if the IP protocol layer yields EPLIP to send a datagram
+        the skb->protocol will be set to ETH_IP_PROTO
+
+II.Change the IEEE1284 - PHASE negotiation and proper detection of pear doing reset in the time
+   we are trying to negotiate FORWARD direction.
+
