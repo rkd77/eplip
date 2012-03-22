@@ -1,6 +1,6 @@
 
                                 /* The necessary header files   */
-#include <linux/autoconf.h>       /* system name and global items */
+//#include <linux/autoconf.h>       /* system name and global items */
                                 /* Standard in kernel modules   */
 #include <linux/module.h>
 #include <linux/kernel.h>

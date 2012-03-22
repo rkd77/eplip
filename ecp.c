@@ -36,7 +36,7 @@ BUGS:   Too many to be listed ;-)
 
 #if ( defined( LINUX ) || defined ( linux ) ) && defined( __KERNEL__ )
 #  define __NO_VERSION__
-#  include <linux/autoconf.h>
+//#  include <linux/autoconf.h>
 #  include <linux/module.h>
 #  include <linux/kernel.h>
 #  include <linux/sched.h>
