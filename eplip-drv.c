@@ -22,7 +22,7 @@
 #include <linux/errno.h>        /* return values */
 #include <linux/init.h>
 #include <linux/delay.h>        /* udelay()                     */
-#include <asm/system.h>         /* cli() sti()                  */
+//#include <asm/system.h>         /* cli() sti()                  */
 #include <asm/bitops.h>
 #include <asm/io.h>             /* inb() inw() outb() ...       */
 #include <asm/dma.h>            /* PC DMAC releated stuff       */

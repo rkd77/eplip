@@ -42,7 +42,7 @@ BUGS:   Too many to be listed ;-)
 #  include <linux/sched.h>
 #  include <linux/interrupt.h>
 #  include <linux/delay.h>
-#  include <asm/system.h>
+//#  include <asm/system.h>
 #  include <asm/irq.h>
 #  include <asm/dma.h>
 #endif
