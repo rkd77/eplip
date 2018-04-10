@@ -967,7 +967,7 @@ eplip_tx_packet(struct sk_buff *skb, struct net_device *dev)
                 }
                 snd->hh.h.length   = skb->len+snd->hh.h.flags ;
         }
-        dev->trans_start   = jiffies;
+        dev->_tx->trans_start   = jiffies;
         snd->skb = skb;
 
         snd->hh.h.checksum = mk_chk( skb->data , skb->len );
