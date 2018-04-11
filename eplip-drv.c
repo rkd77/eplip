@@ -505,6 +505,8 @@ eplip_init_dev(struct net_device *dev, ecp_dev *ecpdev,unsigned long hwaddr)
 
 	dev->tx_queue_len 	 = 10;
 	//dev->flags	        |= IFF_POINTOPOINT|IFF_NOARP;
+	dev->min_mtu                 = 68;
+	dev->max_mtu                 = EPLIP_MRU;
         dev->mtu                 = EPLIP_MTU;
 
         /** set the upper byte of MAC Addr */
@@ -1536,7 +1538,6 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
 
 	        rcv->skb->protocol=eplip_type_trans(rcv->skb, dev);
 		netif_rx(rcv->skb);
-		dev->last_rx = jiffies;
 		nl->enet_stats.rx_bytes += rcv->hh.h.length;
 		nl->enet_stats.rx_packets++;
 		rcv->skb = NULL;
@@ -2165,8 +2166,6 @@ static int eplip_change_mtu(struct net_device *dev, int new_mtu)
 {
         struct net_local *nl = netdev_priv(dev);
 
-	if ((new_mtu < 68) || (new_mtu > EPLIP_MRU))
-		return -EINVAL;
 
         spin_lock(&nl->lock);
         if( netif_running(dev) ) {
