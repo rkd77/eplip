@@ -2217,6 +2217,7 @@ eplip_interrupt(int irq, void *dev_id)
         struct net_device *dev = dev_id;
 	struct net_local *nl;
 	struct eplip_local *rcv;
+	unsigned long flags;
 
 #if NET_DEBUG > 2
 	if (dev == NULL) {
@@ -2227,7 +2228,7 @@ eplip_interrupt(int irq, void *dev_id)
 	nl = netdev_priv(dev);
 	rcv = &nl->rcv_data;
 
-	spin_lock_irq (&nl->lock);
+	spin_lock_irqsave (&nl->lock, flags);
 
         switch (nl->connection) {
 
@@ -2313,7 +2314,7 @@ eplip_interrupt(int irq, void *dev_id)
                 }
 		break;
         }
-	spin_unlock_irq(&nl->lock);
+	spin_unlock_irqrestore(&nl->lock, flags);
 	return IRQ_HANDLED;
 }
 
