@@ -461,8 +461,7 @@ eplip_receive_hard_header4( struct eplip_local *rcv , ecp_dev *dev , __u32 timeo
 
 #endif
 
-static void dma_timeout_routine( unsigned long timer_data );
-
+static void dma_timeout_routine( struct timer_list *t );
 
 static const struct net_device_ops eplip_netdev_ops = {
 	.ndo_open	= eplip_open,
@@ -693,11 +692,8 @@ eplip_none(struct net_device *dev, struct net_local *nl,
 static void
 eplip_schedule_dma_timeout( struct net_local* nl, unsigned long timeout)
 {
-        init_timer (&nl->timer);
-	nl->timer.expires = jiffies + timeout;
-	nl->timer.function = dma_timeout_routine;
-	nl->timer.data = (unsigned long)nl;
-        add_timer(&nl->timer);
+	timer_setup(&nl->timer, dma_timeout_routine, 0);
+	mod_timer(&nl->timer, jiffies + timeout);
 }
 
 /*
@@ -1027,9 +1023,9 @@ eplip_dma_close( struct net_device* dev )
 };
 
 static void
-dma_timeout_routine( unsigned long timer_data )
+dma_timeout_routine( struct timer_list *t )
 {
-	struct net_local* nl = (struct net_local*) timer_data ;
+	struct net_local* nl = from_timer(nl, t, timer);
 	unsigned long flags;
 
 	spin_lock_irqsave(&nl->lock, flags);
