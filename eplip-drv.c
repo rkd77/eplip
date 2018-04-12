@@ -639,8 +639,9 @@ eplip_kick_bh(struct work_struct *work)
 
 {
 	struct net_local *nl = container_of(work, struct net_local, deferred.work);
+	unsigned long flags;
 
-        spin_lock_irq( &nl->lock );
+        spin_lock_irqsave( &nl->lock, flags );
 	if ( nl->is_deferred ) {
 
                 //if( nl->connection !=EPLIP_CN_RECEIVE )
@@ -659,7 +660,7 @@ eplip_kick_bh(struct work_struct *work)
                 //}
 
 	}
-        spin_unlock_irq( &nl->lock );
+        spin_unlock_irqrestore( &nl->lock, flags );
 }
 
 /* Bottom half handler of EPLIP. */
@@ -805,13 +806,15 @@ eplip_bh_timeout_error(struct net_device *dev, struct net_local *nl,
 		      struct eplip_local *snd, struct eplip_local *rcv,
 		      int error)
 {
-	spin_lock_irq(&nl->lock);
+	unsigned long flags;
+
+	spin_lock_irqsave(&nl->lock, flags);
 	if (nl->connection == EPLIP_CN_SEND) {
 
 		if ( error == HS_TIMEOUT ) { /* Timeout */
 			nl->timeout_count++;
 			if ( nl->timeout_count <= 10) {
-				spin_unlock_irq(&nl->lock);
+				spin_unlock_irqrestore(&nl->lock, flags);
 				/* Try again later */
 				return TIMEOUT;
 			}
@@ -839,7 +842,7 @@ eplip_bh_timeout_error(struct net_device *dev, struct net_local *nl,
 
                 netif_wake_queue( dev );
 
-                spin_unlock_irq(&nl->lock);
+                spin_unlock_irqrestore(&nl->lock, flags);
                 return OK ;
 
 	}
@@ -853,7 +856,7 @@ eplip_bh_timeout_error(struct net_device *dev, struct net_local *nl,
                         //queue_task( &nl->immediate , &tq_immediate );
                         //mark_bh( IMMEDIATE_BH );
 												schedule_work(&nl->immediate);
-			spin_unlock_irq(&nl->lock);
+			spin_unlock_irqrestore(&nl->lock, flags);
 			return OK;
 		        }
 
@@ -876,7 +879,7 @@ eplip_bh_timeout_error(struct net_device *dev, struct net_local *nl,
                 if( snd->state == EPLIP_PK_TRIGGER ) {
                         nl->connection = EPLIP_CN_SEND ;
                         set_mode_idle( nl->dev );
-                        spin_unlock_irq( &nl->lock );
+                        spin_unlock_irqrestore( &nl->lock, flags );
                         return TIMEOUT ;
 
                 } else {
@@ -899,7 +902,7 @@ eplip_bh_timeout_error(struct net_device *dev, struct net_local *nl,
 
         nl->connection = EPLIP_CN_NONE;
         set_mode_idle( nl->dev );
-	spin_unlock_irq(&nl->lock);
+	spin_unlock_irqrestore(&nl->lock, flags);
 
         return OK;
 }
@@ -909,6 +912,7 @@ eplip_tx_packet(struct sk_buff *skb, struct net_device *dev)
 {
 	struct net_local *nl = netdev_priv(dev);
 	struct eplip_local *snd = &nl->snd_data;
+	unsigned long flags;
 
 	if (netif_queue_stopped(dev))
 		return NET_XMIT_CN;
@@ -976,7 +980,7 @@ eplip_tx_packet(struct sk_buff *skb, struct net_device *dev)
 
 	snd->state = EPLIP_PK_TRIGGER;
 
-        spin_lock_irq(&nl->lock);
+        spin_lock_irqsave(&nl->lock, flags);
         nl->timeout_count = 0;
 	if (nl->connection == EPLIP_CN_NONE) {
 
@@ -992,7 +996,7 @@ eplip_tx_packet(struct sk_buff *skb, struct net_device *dev)
                 nl->is_deferred = 1;
                 schedule_delayed_work(&nl->deferred, 1);
         }
-	spin_unlock_irq(&nl->lock);
+	spin_unlock_irqrestore(&nl->lock, flags);
 
 	return NET_XMIT_SUCCESS;
 }
@@ -1025,16 +1029,16 @@ eplip_dma_close( struct net_device* dev )
 static void
 dma_timeout_routine( unsigned long timer_data )
 {
-        struct net_local* nl = (struct net_local*) timer_data ;
+	struct net_local* nl = (struct net_local*) timer_data ;
+	unsigned long flags;
 
-        spin_lock_irq(&nl->lock);
-        //printk(KERN_ERR"inside dma_timeout_routine() \n");
-        if(nl->dma_state != EPLIP_DMA_TERM ) {
-                nl->dma_state = EPLIP_DMA_ERROR ;
-                schedule_work(&nl->immediate);
-
-        }
-        spin_unlock_irq(&nl->lock);
+	spin_lock_irqsave(&nl->lock, flags);
+	//printk(KERN_ERR"inside dma_timeout_routine() \n");
+	if (nl->dma_state != EPLIP_DMA_TERM ) {
+		nl->dma_state = EPLIP_DMA_ERROR ;
+		schedule_work(&nl->immediate);
+	}
+	spin_unlock_irqrestore(&nl->lock, flags);
 };
 
 static int
@@ -1141,6 +1145,7 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 		  struct eplip_local *snd, struct eplip_local *rcv)
 {
 	ecp_dev*        ecpdev          = nl->dev ;
+	unsigned long flags;
 
 #ifdef PARANOID
 
@@ -1154,13 +1159,13 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
         switch (snd->state) {
 
 	case EPLIP_PK_TRIGGER:
-                spin_lock_irq( &nl->lock );
+		spin_lock_irqsave( &nl->lock, flags );
                 if ( nl->connection == EPLIP_CN_RECEIVE) {
                         /* Interrupted. */
                         nl->enet_stats.collisions++;
                         schedule_work(&nl->immediate);
                         
-		        spin_unlock_irq(&nl->lock);
+		        spin_unlock_irqrestore(&nl->lock, flags);
 			return OK;
 		}
 
@@ -1171,20 +1176,20 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 #if NET_DEBUG >1
                                 printk(KERN_ERR "%s: RQ_PADDING\n", dev->name);
 #endif
-                                spin_unlock_irq( &nl->lock );
+                                spin_unlock_irqrestore( &nl->lock, flags );
                                 return HS_TIMEOUT ;
 
                         case E_MODE_RQ_COLLISION:
 #if NET_DEBUG >1
                                 printk(KERN_ERR "%s: RQ_COLLISION\n", dev->name);
 #endif
-                                        spin_unlock_irq( &nl->lock );
+                                        spin_unlock_irqrestore( &nl->lock, flags );
                                         return HS_TIMEOUT;
                         case E_MODE_REMOTE_DOWN :
 #if NET_DEBUG >1
                                 printk(KERN_ERR "%s: REMOTE_DOWN(SR=%x)\n", dev->name,READ_STATUS(nl->dev->iobase));
 #endif
-                                        spin_unlock_irq( &nl->lock );
+                                        spin_unlock_irqrestore( &nl->lock, flags );
                                         return HS_TIMEOUT;
 
                 }
@@ -1202,10 +1207,10 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
                                         enable_interrupt( ecpdev );
                                         frob_control( ecpdev , CR_INIT , CR_INIT );
 
-                                        spin_unlock_irq( &nl->lock );
+                                        spin_unlock_irqrestore( &nl->lock, flags );
                                         return HS_TIMEOUT;
                 }
-                spin_unlock_irq( &nl->lock );
+                spin_unlock_irqrestore( &nl->lock, flags );
 
 #if NET_DEBUG > 2
 	        printk(KERN_DEBUG "%s: send start\n", dev->name);
@@ -1240,16 +1245,16 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
                                 printk(KERN_DEBUG "%s:Using DMA to Send DATA\n",dev->name);
 #endif
                                 eplip_dma_send_data( dev );
-                                spin_lock_irq(&nl->lock);
+                                spin_lock_irqsave(&nl->lock, flags);
                                 if(nl->dma_state == EPLIP_DMA_SEND ) {
                                         eplip_schedule_dma_timeout( nl , (HZ) );
-                                        spin_unlock_irq(&nl->lock);
+                                        spin_unlock_irqrestore(&nl->lock, flags);
                                         return OK ;
                                 }
-                                spin_unlock_irq(&nl->lock);
+                                spin_unlock_irqrestore(&nl->lock, flags);
                         }
 
-                        spin_lock_irq(&nl->lock);
+                        spin_lock_irqsave(&nl->lock, flags);
 #if NET_DEBUG > 3
                         if(!del_timer(&nl->timer)) {
                                 printk(KERN_DEBUG"%s: DMA timeout timer has expired\n",dev->name);
@@ -1264,7 +1269,7 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 #if NET_DEBUG > 1
                                 printk(KERN_ERR "%s DMA Timeout sending DATA.Bytes Left:%u of:%u\n",dev->name,residue,snd->hh.h.length);
 #endif
-                                spin_unlock_irq(&nl->lock);
+                                spin_unlock_irqrestore(&nl->lock, flags);
                                 return TIMEOUT ;
                         }
 
@@ -1278,7 +1283,7 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 
                         }
                         nl->dma_state = EPLIP_DMA_NONE ;
-                        spin_unlock_irq(&nl->lock);
+                        spin_unlock_irqrestore(&nl->lock, flags);
 
                 }
                 else
@@ -1323,7 +1328,7 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 
 	case EPLIP_PK_DONE:
 /** Terminate Transfer - Swith HWD back to REVERSE_IDLE state
-  */            spin_lock_irq(&nl->lock);
+  */            spin_lock_irqsave(&nl->lock, flags);
 
                 dev_kfree_skb(snd->skb);
 		snd->skb = NULL;
@@ -1335,7 +1340,7 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 #if NET_DEBUG > 2
                 printk(KERN_DEBUG "%s: send end\n", dev->name);
 #endif
-                spin_unlock_irq(&nl->lock);
+                spin_unlock_irqrestore(&nl->lock, flags);
 
 		return OK;
 	}
@@ -1349,11 +1354,12 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
 		    struct eplip_local *snd, struct eplip_local *rcv)
 {
 	ecp_dev         *ecpdev      = nl->dev;
+	unsigned long flags;
 
 	switch (rcv->state) {
 	case EPLIP_PK_TRIGGER:
 		/* swithch to RIDLER_mode() */
-                spin_lock_irq(&nl->lock);
+                spin_lock_irqsave(&nl->lock, flags);
                 switch( set_mode_rdata( ecpdev , nl->trigger_timeout) ) {
                         case E_MODE_OK: break;
                         case E_MODE_RQ_TIMEOUT:
@@ -1372,11 +1378,11 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
 
                                                 nl->connection = EPLIP_CN_NONE ;
                                         }
-                                        spin_unlock_irq(&nl->lock);
+                                        spin_unlock_irqrestore(&nl->lock, flags);
                                         return OK;
                 }
 
-                spin_unlock_irq(&nl->lock);
+                spin_unlock_irqrestore(&nl->lock, flags);
 #if NET_DEBUG > 2
                 printk(KERN_DEBUG "%s: receive start\n", dev->name);
 #endif
@@ -1427,21 +1433,21 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
 #endif
 
                                 eplip_dma_receive_data( dev );
-                                spin_lock_irq(&nl->lock);
+                                spin_lock_irqsave(&nl->lock, flags);
 
                                 if(nl->dma_state == EPLIP_DMA_RECEIVE ) {
                                         eplip_schedule_dma_timeout( nl , (HZ) );
-                                        spin_unlock_irq(&nl->lock);
+                                        spin_unlock_irqrestore(&nl->lock, flags);
                                         return OK ;
                                 }
 
-                                spin_unlock_irq(&nl->lock);
+                                spin_unlock_irqrestore(&nl->lock, flags);
                         }
 
                         if( nl->dma_state == EPLIP_DMA_RECEIVE )
                                 return OK ;
 
-                        spin_lock_irq(&nl->lock);
+                        spin_lock_irqsave(&nl->lock, flags);
 
 #if NET_DEBUG > 3
                         if(!del_timer(&nl->timer)) {
@@ -1459,7 +1465,7 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
                                 printk(KERN_DEBUG"%s: dma_state=%u snd->state=%u rcv->state=%u connection=%u\n",dev->name,nl->dma_state,snd->state,rcv->state,nl->connection);
 #endif
                                 nl->dma_state =EPLIP_DMA_ERROR ;
-                                spin_unlock_irq(&nl->lock);
+                                spin_unlock_irqrestore(&nl->lock, flags);
                                 return TIMEOUT ;
                         }
 
@@ -1473,7 +1479,7 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
                         }
 
                         nl->dma_state = EPLIP_DMA_NONE ;
-                        spin_unlock_irq(&nl->lock);
+                        spin_unlock_irqrestore(&nl->lock, flags);
 
                         if(  nl->bounce_buff_phys == nl->phys_addr ) {
 #if NET_DEBUG >3
@@ -1552,7 +1558,7 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
                 }
 #endif
                 /* Close the connection. */
-                spin_lock_irq(&nl->lock);
+                spin_lock_irqsave(&nl->lock, flags);
                 set_mode_idle( ecpdev );
 
 #if NET_DEBUG > 2
@@ -1565,11 +1571,11 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
 #endif
                         nl->connection = EPLIP_CN_SEND;
                         schedule_work(&nl->immediate);
-                        spin_unlock_irq(&nl->lock);
+                        spin_unlock_irqrestore(&nl->lock, flags);
 			return OK;
 		} else {
 			nl->connection = EPLIP_CN_NONE;
-			spin_unlock_irq(&nl->lock);
+			spin_unlock_irqrestore(&nl->lock, flags);
 			return OK;
 		}
 	}
