@@ -478,6 +478,7 @@ eplip_init_dev(struct net_device *dev, ecp_dev *ecpdev,unsigned long hwaddr)
 {
 	struct  net_local *nl;
         int     i  ;
+	u8 addr[ETH_ALEN];
 
 	SET_MODULE_OWNER(dev);
 
@@ -509,14 +510,16 @@ eplip_init_dev(struct net_device *dev, ecp_dev *ecpdev,unsigned long hwaddr)
         dev->mtu                 = EPLIP_MTU;
 
         /** set the upper byte of MAC Addr */
-	memset(dev->dev_addr, 0xfc, ETH_ALEN);
+	memset(addr, 0xfc, ETH_ALEN);
       //  if(hwaddr){
                 for( i=0; i<4; i++ ){
-                        dev->dev_addr[5-i]=hwaddr &0xff;
+                        addr[5-i]=hwaddr &0xff;
                         hwaddr>>=8;
                 }
                
       //  }
+	__dev_addr_set(dev, addr, ETH_ALEN);
+
 	/* Set the private structure */
 
 /*
