@@ -540,7 +540,7 @@ eplip_init_dev(struct net_device *dev, ecp_dev *ecpdev,unsigned long hwaddr)
 
                 nl->bounce_buff = kmalloc(PKT_RCVBUF_SZ,GFP_DMA | GFP_KERNEL);
 
-                if((!nl->bounce_buff) ||   ( (u32)virt_to_bus(nl->bounce_buff) + PKT_RCVBUF_SZ > MAX_DMA_PHYS_ADDRESS)  ){
+                if((!nl->bounce_buff) ||   ( (u32)isa_virt_to_bus(nl->bounce_buff) + PKT_RCVBUF_SZ > MAX_DMA_PHYS_ADDRESS)  ){
 
                         if(nl->bounce_buff) {
                                 kfree(nl->bounce_buff);
@@ -556,7 +556,7 @@ eplip_init_dev(struct net_device *dev, ecp_dev *ecpdev,unsigned long hwaddr)
                         dev->dma = 0;
             }
                 else {
-                        nl->bounce_buff_phys = (u32)virt_to_bus(nl->bounce_buff);
+                        nl->bounce_buff_phys = (u32)isa_virt_to_bus(nl->bounce_buff);
                 }
                 break ;
         }
@@ -1051,7 +1051,7 @@ eplip_dma_send_data( struct net_device* dev )
 /** Check the send skb is ISA DMA safe
   * if __NOT__ use the bounce buffer
   */
-        phys_addr=(u32)virt_to_bus(snd->skb->data );
+        phys_addr=(u32)isa_virt_to_bus(snd->skb->data );
         if(   ( phys_addr + snd->hh.h.length ) > MAX_DMA_PHYS_ADDRESS  ){
 
 #if NET_DEBUG > 3
@@ -1101,13 +1101,13 @@ eplip_dma_receive_data( struct net_device* dev)
 /** Check the send skb is ISA DMA safe
   * if __NOT__ use the bounce buffer
   */
-        nl->phys_addr=(u32)virt_to_bus(rcv->skb->data );
+        nl->phys_addr=(u32)isa_virt_to_bus(rcv->skb->data );
         if(   ( nl->phys_addr + rcv->hh.h.length ) > MAX_DMA_PHYS_ADDRESS  ){
 
 #if NET_DEBUG > 3
                 printk(KERN_DEBUG "%s: Using bouncing buffer to receive data\n",dev->name);
 #endif
-                nl->phys_addr = nl->bounce_buff_phys;//(u32)virt_to_bus(nl->bounce_buff);
+                nl->phys_addr = nl->bounce_buff_phys;//(u32)isa_virt_to_bus(nl->bounce_buff);
 
         }
 
