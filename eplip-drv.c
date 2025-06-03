@@ -1255,11 +1255,11 @@ eplip_send_packet(struct net_device *dev,  struct net_local *nl,
 
                         spin_lock_irqsave(&nl->lock, flags);
 #if NET_DEBUG > 3
-                        if(!del_timer(&nl->timer)) {
+                        if(!timer_delete(&nl->timer)) {
                                 printk(KERN_DEBUG"%s: DMA timeout timer has expired\n",dev->name);
                         };
 #else
-                        del_timer(&nl->timer);
+                        timer_delete(&nl->timer);
 #endif
                         if( nl->dma_state!=EPLIP_DMA_TERM ){
                                 unsigned int residue ;
@@ -1449,11 +1449,11 @@ eplip_receive_packet(struct net_device *dev, struct net_local *nl,
                         spin_lock_irqsave(&nl->lock, flags);
 
 #if NET_DEBUG > 3
-                        if(!del_timer(&nl->timer)) {
+                        if(!timer_delete(&nl->timer)) {
                                 printk(KERN_DEBUG"%s: DMA timeout timer has expired\n",dev->name);
                         };
 #else
-                        del_timer(&nl->timer);
+                        timer_delete(&nl->timer);
 #endif
                         if( nl->dma_state!=EPLIP_DMA_TERM ){
                                 unsigned int residue ;
