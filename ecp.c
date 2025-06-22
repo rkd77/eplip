@@ -95,7 +95,7 @@ no_reg:
   *             read-only if IEE1284 compliant  ECP hardware is present.
   * @pre        The Hardware must be in COMPATIBLE( SPP mode )
   */
-__inline __u8
+static __u8
 is_IEEE1284( ecp_dev *dev )
 {
         __u8 ecr;
