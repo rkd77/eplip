@@ -1028,7 +1028,8 @@ eplip_dma_close( struct net_device* dev )
 static void
 dma_timeout_routine( struct timer_list *t )
 {
-	struct net_local* nl = from_timer(nl, t, timer);
+	//struct net_local* nl = from_timer(nl, t, timer);
+	struct net_local* nl = container_of(t, typeof(*nl), timer);
 	unsigned long flags;
 
 	spin_lock_irqsave(&nl->lock, flags);
